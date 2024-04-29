@@ -45,11 +45,11 @@ public class Program
                     })
                     .Configure<ClientMessagingOptions>(opts =>
                     {
-                        opts.ResponseTimeout = TimeSpan.MaxValue;
+                        opts.ResponseTimeout = TimeSpan.FromMinutes(30);
                     })
                     .Configure<SiloMessagingOptions>(opts =>
                     {
-                        opts.ResponseTimeout = TimeSpan.MaxValue;
+                        opts.ResponseTimeout = TimeSpan.FromMinutes(30);
                     })
                 )
                 // .UseOrleansClient(c =>
