@@ -1,13 +1,11 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Google.Protobuf;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Orleans.Configuration;
 using Orleans.Hosting;
 using Orleans.Serialization;
@@ -52,39 +50,24 @@ public class Program
                         opts.ResponseTimeout = TimeSpan.FromMinutes(30);
                     })
                 )
-                // .UseOrleansClient(c =>
-                // {
-                    // var builder = new ConfigurationBuilder()
-                    //     .SetBasePath(Directory.GetCurrentDirectory())
-                    //     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-                    // var configuration = builder.Build();
-                    //
-                    // var connectionString = configuration.GetValue<string>("ConnectionString");
-                    //
-                    // if (string.IsNullOrEmpty(connectionString))
-                    // {
-                    //     throw new Exception("ConnectionString must be non-empty.");
-                    // }
-                // })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
                 })
-                .ConfigureLogging(logging => logging.AddConsole())
+                .ConfigureLogging(logging => logging.AddConsole(options =>
+                {
+                    options.IncludeScopes = true;
+                    options.TimestampFormat = "yyyy-MM-dd hh:mm:ss";
+                }))
                 .Build();
 
             await host.StartAsync();
 
             await Task.Delay(-1);
-            // CreateHostBuilder(args).Build().Run();
         }
         catch (Exception ex)
         {
-            Console.WriteLine("start fail, e" + ex.Message);
-        }
-        finally
-        {
-            Console.WriteLine(".");
+            Console.WriteLine("start fail, e: " + ex.Message);
         }
     }
 }

@@ -17,7 +17,6 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Orleans;
-using Orleans.Runtime;
 using Portkey.Contracts.CA;
 using ProofService.interfaces;
 using RestSharp;
@@ -33,11 +32,9 @@ public class ZkProofGrain : Grain, IZkProofGrain
     private readonly ZkProverSetting _proverSetting;
     private readonly ContractClient _contractClient;
     private Prover _prover;
-    public bool isPoverLoad;
+    public bool isProverLoad;
     
     public ZkProofGrain(
-        // [PersistentState("zkProofState", "MySqlSchrodingerImageStore")]
-        // IPersistentState<ZkProofState> zkProofState,
         IOptions<ZkProverSetting> proverSetting,
         IOptions<ContractClient> contractClient,
         ILogger<ZkProofGrain> logger)
@@ -45,19 +42,6 @@ public class ZkProofGrain : Grain, IZkProofGrain
         _logger = logger;
         _proverSetting = proverSetting.Value;
         _contractClient = contractClient.Value;
-        // _proverSetting = new ZkProverSetting
-        // {
-        //     WasmPath = "",
-        //     R1csPath = "",
-        //     ZkeyPath = ""
-        // };
-        // _contractClient = new ContractClient
-        // {
-        //     IP = "",
-        //     CaContractAddress = "",
-        //     PK = "",
-        //     WalletAddress = ""
-        // };
     }
     
     public async Task<ProofLoginInResponse> Login(string proof, string identifierHash, string publicKeyHex, string managerAddress, string salt)
@@ -135,10 +119,12 @@ public class ZkProofGrain : Grain, IZkProofGrain
         try
         {
             var endpoint = ip;
-            if (!isPoverLoad)
+            if (!isProverLoad)
             {
+                _logger.LogInformation("Loading prover file......");
                 _prover = Prover.Create(_proverSetting.WasmPath, _proverSetting.R1csPath, _proverSetting.ZkeyPath);
-                isPoverLoad = true;
+                isProverLoad = true;
+                _logger.LogInformation("Loading prover file completed");
             }
             var zkVk = _prover.ExportVerifyingKeyBn254();
             var res = await InitializeAsync(ip, endpoint, _contractClient.CaContractAddress, _contractClient.WalletAddress,
@@ -154,26 +140,16 @@ public class ZkProofGrain : Grain, IZkProofGrain
     
     public async Task<ProofGenerationResponse> Generate(string jwt, string salt)
     {
-        // string jwtStr = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjZjZTExYWVjZjllYjE0MDI0YTQ0YmJmZDFiY2Y4YjMyYTEyMjg3ZmEiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiI2ODc0MzA1NDA3OTItMjJyc29xOGxvbWxzcDEwMHF2MnBkdjBwYmExN2RxNHMuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiI2ODc0MzA1NDA3OTItMjJyc29xOGxvbWxzcDEwMHF2MnBkdjBwYmExN2RxNHMuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTIwNzIzNzQxMjQ4MTY5Nzc0MzQiLCJlbWFpbCI6InlpbWVuZy5sdUBhZWxmLmlvIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImF0X2hhc2giOiJFUzAxX2oyQmVRb1RWYjl6YUIxSVhRIiwibmFtZSI6ImpsIGJyIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0pWcmtucUJQUmtFZWJQVkEzd1FnNUxseWYwREtMRV9lTkZiRzdKVEZQS0oxSWM5dz1zOTYtYyIsImdpdmVuX25hbWUiOiJqbCIsImZhbWlseV9uYW1lIjoiYnIiLCJpYXQiOjE3MTM3NjQzNjIsImV4cCI6MTcxMzc2Nzk2Mn0.BaQtj8S0IwQUxMVTGyza9HoGJv4LgKYKLPByeKN4EuTHPsM_6cGKJLVliUcyOK7Cmo1Bse5m_KP7GTeX0E3RNqHbFn0FXHh01TRFKWQFwUTjkXYbNy1nK0YgT6uy0D0c35NnsrO6UnYgqQlH5lFZvYCkHfsvwnB3PYLKmIJRu_HFSZbzNmtacapkmkSGDf9FMe0dEHscwIQ61Vq6D9z4A9k1PxlfJeOqBwom-HJx-p9eHgsiY-4AwsrRvqwaq_wCzO1JObZsx2-_3mVQv7u3-8voU5U9eP1hOE4ntM6XBpoQ6LIgWzI658VYo8OQy3pZjvnXYRYiIv_pcsQt_ae8Zw";
-        // string saltStr = "a677999396dc49a28ad6c9c242719bb3";
-        // string wasmPath = "/Users/jasonlu/Downloads/ZkFile/guardianhash.wasm";
-        // string r1csPath = "/Users/jasonlu/Downloads/ZkFile/guardianhash.r1cs";
-        // string zkeyPath = "/Users/jasonlu/Downloads/ZkFile/guardianhash_0001.zkey";
-
-        if (!isPoverLoad)
+        if (!isProverLoad)
         {
+            _logger.LogInformation("Loading prover file......");
             _prover = Prover.Create(_proverSetting.WasmPath, _proverSetting.R1csPath, _proverSetting.ZkeyPath);
-            isPoverLoad = true;
+            isProverLoad = true;
+            _logger.LogInformation("Loading prover file completed");
         }
 
         var res = await Generate(jwt, salt, _prover);
         return res;
-        // return new ProofGenerationResponse
-        // {
-        //     IdentifierHash = "1",
-        //     PublicKey = "2",
-        //     Proof = "3"
-        // };
     }
 
     public async Task<ProofGenerationResponse> Generate(string jwtStr, string saltStr, Prover _prover)
@@ -240,9 +216,11 @@ public class ZkProofGrain : Grain, IZkProofGrain
             provingInput["sub_value_length"] = new List<string> {subValueLength.ToString()};
             
             // exec ProveBn254
+            _logger.LogInformation("Starting proof generation......");
             var provingOutputString = _prover.ProveBn254(provingInput);
+            _logger.LogInformation("Completing proof generation");
             var provingOutput = ParseProvingOutput(provingOutputString);
-            Console.WriteLine("proof: " + provingOutput.Proof);
+            _logger.LogInformation("proof: " + provingOutput.Proof);
             return new ProofGenerationResponse
             {
                 Proof = provingOutput.Proof,
@@ -253,7 +231,7 @@ public class ZkProofGrain : Grain, IZkProofGrain
         }
         catch (Exception e)
         {
-            Console.WriteLine("proof generate exception, e: ", e.Message);
+            _logger.LogInformation("proof generate exception, e: ", e.Message);
             throw;
         }
     }

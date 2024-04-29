@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using Orleans;
-using ProofService.interfaces;
 using ZkProof.Grains;
 
 namespace Grains;

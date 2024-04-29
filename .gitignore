@@ -8,6 +8,8 @@
 .docusaurus
 .cache-loader
 .idea
+bin
+obj
 
 # Misc
 .DS_Store
