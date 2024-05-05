@@ -6,6 +6,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Nethereum.Hex.HexConvertors.Extensions;
+using Nethereum.KeyStore;
 using Orleans.Configuration;
 using Orleans.Hosting;
 using Orleans.Serialization;
@@ -22,6 +24,11 @@ public class Program
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
             var configuration = builder.Build();
+            
+            var proverSetting = configuration.GetSection("ProverSetting");
+            var contractClient = configuration.GetSection("ContractClient");
+            var privateKey = DecryptKeyStoreFromFile(contractClient["KeyStorePassword"], contractClient["KeyStorePath"]);
+            contractClient["PK"] = HexByteConvertorExtensions.ToHex(privateKey);
 
             var siloPort = 11111;
             var gatewayPort = 30000;
@@ -31,8 +38,8 @@ public class Program
                     .ConfigureEndpoints(siloPort, gatewayPort)
                     .ConfigureServices(services =>
                     {
-                        services.Configure<ZkProverSetting>(configuration.GetSection("ProverSetting"));
-                        services.Configure<ContractClient>(configuration.GetSection("ContractClient"));
+                        services.Configure<ZkProverSetting>(proverSetting);
+                        services.Configure<ContractClient>(contractClient);
                         services.AddSerializer(serializerBuilder =>
                         {
                             serializerBuilder.AddNewtonsoftJsonSerializer(
@@ -70,4 +77,13 @@ public class Program
             Console.WriteLine("start fail, e: " + ex.Message);
         }
     }
+
+    private static byte[] DecryptKeyStoreFromFile(string password, string filePath)
+    {
+        using var file = File.OpenText(filePath);
+        var json = file.ReadToEnd();
+        var keyStoreService = new KeyStoreService();
+        return keyStoreService.DecryptKeyStoreFromJson(password, json);
+    }
+    
 }

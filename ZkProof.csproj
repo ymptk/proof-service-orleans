@@ -21,6 +21,7 @@
     <PackageReference Include="RestSharp" Version="110.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.0.3" />
+    <PackageReference Include="Nethereum.KeyStore" Version="4.15.2" />
   </ItemGroup>
   <ItemGroup>
     <_ContentIncludedByDefault Remove="Views\Index.cshtml" />
